@@ -1,0 +1,35 @@
+# Виртуальное окружение
+venv/
+.env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Логи
+*.log
+
+# Файлы окружения
+.env
+.env.*
+
+# pytest
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+dist/
+build/
+*.egg-info/
+
+.mypy_cache/
+.ruff_cache/
