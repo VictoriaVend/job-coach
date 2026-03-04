@@ -1,35 +1,93 @@
-# Виртуальное окружение
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pyi
+*.pytest_cache/
+*.mypy_cache/
+*.coverage
+*.hypothesis/
+*.pyre/
+*.ruff_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# =====================
+# Virtual Environments
+# =====================
 venv/
-.env/
+.env
+.env.*
 .venv/
 
-# Python cache
-__pycache__/
+# =====================
+# PyCharm / IDE
+# =====================
+.idea/
+*.iml
+*.iws
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# =====================
+# Docker
+# =====================
+*.log
+docker-compose.override.yml
+docker-compose.override.yaml
+**/pgdata/
+**/qdrant_storage/
+**/ollama_storage/
+
+# =====================
+# Alembic / Migrations
+# =====================
+migrations/__pycache__/
+migrations/versions/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Логи
-*.log
-
-# Файлы окружения
-.env
-.env.example
-
-# pytest
-.pytest_cache/
-
-# IDE
-.idea/
-.vscode/
-
-# OS
+# =====================
+# OS / System
+# =====================
 .DS_Store
 Thumbs.db
+desktop.ini
 
-dist/
-build/
-*.egg-info/
+# =====================
+# Logs / Runtime
+# =====================
+*.log
+*.out
+*.pid
+*.sqlite3
 
-.mypy_cache/
-.ruff_cache/
+# =====================
+# LLM / ML / Data
+# =====================
+ml/ingestion/*.cache
+ml/embeddings/*.cache
+ml/evaluation/*.cache
+ml/analysis/*.cache
+*.vectorstore
+*.db
+*.bin
+*.onnx
+*.h5
+*.pt
+
+# =====================
+# Misc
+# =====================
+*.bak
+*.tmp
+*.swp
+*.swo

@@ -1,24 +1,38 @@
 [project]
 name = "job_coach"
 version = "0.1.0"
-description = "My agent to help find the job"
+description = "AI-powered Job Coach backend"
 dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "SQLAlchemy>=2.0",
+    "psycopg2-binary",
+    "pydantic>=2.12",
     "langchain",
     "langchain-community",
-    "chromadb"
+    "chromadb",
+    "sentence-transformers",
+    "celery",
+    "redis",
+    "python-dotenv",
+    "orjson"
 ]
+
 [project.optional-dependencies]
 dev = [
     "pytest",
     "black",
     "ruff",
-    "mypy"
+    "mypy",
+    "pre-commit",
+    "ipython"
 ]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=65.5.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
