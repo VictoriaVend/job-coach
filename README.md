@@ -11,7 +11,8 @@ pre-commit install
 pre-commit run --all-files
 ## Run
 
-python -m job_coach.main
+pip install -e .
+uvicorn job_coach.app.main:app --reload
 Overview
 
 AI-powered Job Application Tracker is a production-style backend application that combines traditional application tracking with a Retrieval-Augmented Generation (RAG) pipeline.
