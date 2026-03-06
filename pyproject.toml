@@ -2,30 +2,51 @@
 name = "job_coach"
 version = "0.1.0"
 description = "AI-powered Job Coach backend"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "SQLAlchemy>=2.0",
+    "alembic",
     "psycopg2-binary",
-    "pydantic>=2.12",
-    "langchain",
-    "langchain-community",
-    "chromadb",
-    "sentence-transformers",
-    "celery",
-    "redis",
+    "pydantic>=2.0",
+    "pydantic-settings",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "python-multipart",
     "python-dotenv",
-    "orjson"
+    "orjson",
+    # AI / ML (uncomment when needed)
+    # "langchain",
+    # "langchain-community",
+    # "sentence-transformers",
+    # "qdrant-client",
+    # "PyMuPDF",
+    # Infrastructure (uncomment when needed)
+    # "celery",
+    # "redis",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "httpx",
     "black",
     "ruff",
     "mypy",
     "pre-commit",
-    "ipython"
+    "ipython",
+]
+ml = [
+    "langchain",
+    "langchain-community",
+    "sentence-transformers",
+    "qdrant-client",
+    "PyMuPDF",
+]
+infra = [
+    "celery",
+    "redis",
 ]
 
 [tool.setuptools.packages.find]
@@ -36,12 +57,16 @@ requires = ["setuptools>=65.5.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
-line-length = 88
+line-length = 92
 target-version = ["py312"]
 
 [tool.ruff]
-line-length = 88
+line-length = 92
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,12 +1,16 @@
-version: "3.9"
-
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/app/src/job_coach
+      - PYTHONPATH=/app/src
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/job_coach
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - OLLAMA_URL=http://ollama:11434
     volumes:
       - .:/app
     depends_on:
@@ -32,7 +36,7 @@ services:
       - "6379:6379"
 
   qdrant:
-    image: qdrant/qdrant:v1.2.1
+    image: qdrant/qdrant:v1.12.6
     ports:
       - "6333:6333"
 
