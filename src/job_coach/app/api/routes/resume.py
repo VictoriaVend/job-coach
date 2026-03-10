@@ -13,20 +13,22 @@ ALLOWED_CONTENT_TYPES = {"application/pdf"}
 
 
 @router.post("/upload", response_model=ResumeRead, status_code=status.HTTP_201_CREATED)
-def upload_resume(
+async def upload_resume(
     file: UploadFile,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Upload a resume PDF. Text extraction and embedding happen asynchronously."""
+    """Upload a resume PDF. Stores metadata and optionally triggers indexing."""
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported file type: {file.content_type}. Only PDF is allowed.",
         )
 
-    # TODO: Save file to storage (S3 / local) and trigger Celery task for
-    #       text extraction + embedding. For now, store metadata only.
+    # Read file bytes
+    pdf_bytes = await file.read()
+
+    # Save metadata to DB
     resume = Resume(
         user_id=current_user.id,
         filename=file.filename or "unnamed.pdf",
@@ -35,6 +37,20 @@ def upload_resume(
     db.add(resume)
     db.commit()
     db.refresh(resume)
+
+    # Try to index (extract text + embed) — graceful if ML deps not installed
+    try:
+        from job_coach.app.services.indexing_service import index_resume
+
+        chunks_count = index_resume(db, resume.id, pdf_bytes, current_user.id)
+        print(f"Indexed {chunks_count} chunks from {resume.filename}")
+        db.refresh(resume)  # refresh to get raw_text
+    except ImportError:
+        pass  # ML dependencies not installed — skip indexing
+    except Exception as e:
+        print(f"Indexing failed: {e}")
+        pass  # Indexing failed — resume metadata is still saved
+
     return resume
 
 

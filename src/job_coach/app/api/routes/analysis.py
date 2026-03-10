@@ -25,17 +25,26 @@ def skill_gap(
     body: SkillGapRequest,
     current_user: User = Depends(get_current_user),
 ):
-    """Analyze the skill gap between a resume and a job description.
+    """Analyze the skill gap between a resume and a job description."""
+    try:
+        from job_coach.ml.analysis import analyze_skill_gap
 
-    TODO: Wire up to ml/analysis/ pipeline:
-    1. Extract skills from resume_text via LLM
-    2. Extract required skills from job_description
-    3. Compute intersection, missing, and match score
-    """
-    return SkillGapResponse(
-        resume_skills=[],
-        required_skills=[],
-        matching_skills=[],
-        missing_skills=[],
-        match_score=0.0,
-    )
+        result = analyze_skill_gap(
+            resume_text=body.resume_text,
+            job_description=body.job_description,
+        )
+        return SkillGapResponse(
+            resume_skills=result.resume_skills,
+            required_skills=result.required_skills,
+            matching_skills=result.matching_skills,
+            missing_skills=result.missing_skills,
+            match_score=result.match_score,
+        )
+    except ImportError:
+        return SkillGapResponse(
+            resume_skills=[],
+            required_skills=[],
+            matching_skills=[],
+            missing_skills=[],
+            match_score=0.0,
+        )

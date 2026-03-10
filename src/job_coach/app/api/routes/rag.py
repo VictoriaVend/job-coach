@@ -23,17 +23,25 @@ def rag_query(
     body: RAGQuery,
     current_user: User = Depends(get_current_user),
 ):
-    """Query the RAG pipeline.
+    """Query the RAG pipeline: embed → retrieve → LLM → structured response."""
+    try:
+        from job_coach.ml.rag import run_rag_pipeline
 
-    TODO: Wire up to ml/rag/ pipeline:
-    1. Embed query via sentence-transformers
-    2. Vector search in Qdrant
-    3. Build context from retrieved chunks
-    4. Send to Ollama LLM
-    5. Return structured response
-    """
-    return RAGResponse(
-        query=body.query,
-        answer="RAG pipeline is not yet connected. This is a placeholder response.",
-        sources=[],
-    )
+        result = run_rag_pipeline(
+            query=body.query,
+            user_id=current_user.id,
+            top_k=body.top_k,
+        )
+        return RAGResponse(
+            query=result.query,
+            answer=result.answer,
+            sources=result.sources,
+        )
+    except ImportError:
+        return RAGResponse(
+            query=body.query,
+            answer=(
+                "ML dependencies are not installed. Install with: pip install '.[ml]'"
+            ),
+            sources=[],
+        )
