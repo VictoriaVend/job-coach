@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from job_coach.app.core.config import settings
+from job_coach.app.core.logger import logger
 
 pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
@@ -22,7 +23,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+    logger.debug(f"Created access token for user {data.get('sub')}")
+    return encoded_jwt
 
 
 def decode_access_token(token: str) -> dict | None:
@@ -30,5 +35,5 @@ def decode_access_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError as e:
-        print(f"JWT Decode Error: {e}")
+        logger.warning(f"JWT Decode Error: {e}")
         return None

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from job_coach.app.api.dependencies import get_current_user
+from job_coach.app.core.logger import logger
 from job_coach.app.db.dependencies import get_db
 from job_coach.app.models.user import User
 from job_coach.app.schemas.job import JobCreate, JobRead, JobUpdate
@@ -23,6 +24,7 @@ def create_job_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new job application."""
+    logger.info(f"User {current_user.id} creating job application")
     return create_job(db, current_user.id, job_in)
 
 
@@ -34,6 +36,10 @@ def list_jobs(
     current_user: User = Depends(get_current_user),
 ):
     """List all job applications for the current user."""
+    logger.debug(
+        f"""User {current_user.id} requesting job applications 
+        (skip={skip}, limit={limit})"""
+    )
     return get_jobs(db, current_user.id, skip=skip, limit=limit)
 
 
@@ -44,8 +50,13 @@ def get_job_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Get a specific job application by ID."""
+    logger.debug(f"User {current_user.id} requesting job application {job_id}")
     job = get_job(db, job_id, current_user.id)
     if not job:
+        logger.warning(
+            f"""Job application {job_id} 
+        not found for user {current_user.id}"""
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job application not found",
@@ -61,8 +72,13 @@ def update_job_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Update an existing job application."""
+    logger.info(f"User {current_user.id} updating job application {job_id}")
     job = update_job(db, job_id, current_user.id, job_in)
     if not job:
+        logger.warning(
+            f"""Update failed: Job application {job_id} 
+            not found for user {current_user.id}"""
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job application not found",
@@ -77,8 +93,13 @@ def delete_job_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a job application."""
+    logger.info(f"User {current_user.id} deleting job application {job_id}")
     deleted = delete_job(db, job_id, current_user.id)
     if not deleted:
+        logger.warning(
+            f"""Delete failed: Job application {job_id}
+             not found for user {current_user.id}"""
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job application not found",

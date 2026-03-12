@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from job_coach.app.core.logger import logger
 from job_coach.app.models.resume import Resume
 from job_coach.ml.embeddings import get_embedding_service, get_vector_store
 from job_coach.ml.ingestion import chunk_text, extract_text_from_pdf
@@ -41,8 +42,10 @@ def index_resume(
         db.commit()
 
     # 3. Chunk
+    logger.debug(f"Chunking resume text for {resume_id}")
     chunks = chunk_text(raw_text)
     if not chunks:
+        logger.warning(f"No text extracted/chunked for resume {resume_id}")
         return 0
 
     # 4. Embed
@@ -61,4 +64,5 @@ def index_resume(
         document_type="resume",
     )
 
+    logger.info(f"Indexed {len(chunks)} chunks for resume {resume_id} (user {user_id})")
     return len(chunks)

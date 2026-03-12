@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from job_coach.app.api.dependencies import get_current_user
+from job_coach.app.core.logger import logger
 from job_coach.app.models.user import User
 
 router = APIRouter(tags=["analysis"])
@@ -26,6 +27,7 @@ def skill_gap(
     current_user: User = Depends(get_current_user),
 ):
     """Analyze the skill gap between a resume and a job description."""
+    logger.info(f"User {current_user.id} requested skill gap analysis")
     try:
         from job_coach.ml.analysis import analyze_skill_gap
 
@@ -40,7 +42,8 @@ def skill_gap(
             missing_skills=result.missing_skills,
             match_score=result.match_score,
         )
-    except ImportError:
+    except ImportError as e:
+        logger.error(f"Skill gap analysis error for user {current_user.id}: {e}")
         return SkillGapResponse(
             resume_skills=[],
             required_skills=[],
@@ -70,6 +73,7 @@ def semantic_job_match(
     Unlike skill gap analysis which extracts explicit keywords, this pipeline uses
     dense vector embeddings to understand the implicit contextual match.
     """
+    logger.info(f"User {current_user.id} requested semantic match analysis")
     try:
         from job_coach.ml.analysis.semantic_match import generate_semantic_match
 
@@ -81,7 +85,8 @@ def semantic_job_match(
             similarity_score=result.similarity_score,
             interpretation=result.interpretation,
         )
-    except ImportError:
+    except ImportError as e:
+        logger.error(f"Semantic match analysis error for user {current_user.id}: {e}")
         return SemanticMatchResponse(
             similarity_score=0.0,
             interpretation="ML dependencies are not installed.",

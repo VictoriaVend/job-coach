@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from job_coach.app.core.logger import logger
 from job_coach.app.core.security import hash_password, verify_password
 from job_coach.app.models.user import User
 from job_coach.app.schemas.user import UserCreate
@@ -26,13 +27,17 @@ def create_user(db: Session, user_in: UserCreate) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.info(f"Created new user: {user.username}")
     return user
 
 
 def authenticate_user(db: Session, username: str, password: str) -> User | None:
     user = get_user_by_username(db, username)
     if not user:
+        logger.debug(f"Authentication failed: user {username} not found")
         return None
     if not verify_password(password, user.hashed_password):
+        logger.debug(f"Authentication failed: incorrect password for {username}")
         return None
+    logger.info(f"User {username} successfully authenticated")
     return user

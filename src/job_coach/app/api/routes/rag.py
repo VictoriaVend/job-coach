@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from job_coach.app.api.dependencies import get_current_user
+from job_coach.app.core.logger import logger
 from job_coach.app.models.user import User
 
 router = APIRouter(tags=["rag"])
@@ -24,6 +25,10 @@ def rag_query(
     current_user: User = Depends(get_current_user),
 ):
     """Query the RAG pipeline: embed → retrieve → LLM → structured response."""
+    logger.info(
+        f"User {current_user.id} querying RAG pipeline: "
+        f"'{body.query}' (top_k={body.top_k})"
+    )
     try:
         from job_coach.ml.rag import run_rag_pipeline
 
@@ -37,7 +42,8 @@ def rag_query(
             answer=result.answer,
             sources=result.sources,
         )
-    except ImportError:
+    except ImportError as e:
+        logger.error(f"RAG pipeline error for user {current_user.id}: {e}")
         return RAGResponse(
             query=body.query,
             answer=(

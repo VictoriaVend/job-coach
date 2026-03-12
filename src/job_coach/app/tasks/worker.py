@@ -1,11 +1,8 @@
 """Celery background tasks for long-running operations."""
 
-import logging
-
 from job_coach.app.core.celery import celery_app
+from job_coach.app.core.logger import logger
 from job_coach.app.db.session import SessionLocal
-
-logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="job_coach.app.tasks.index_resume_task", bind=True, max_retries=3)
