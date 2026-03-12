@@ -17,6 +17,23 @@ services:
       - postgres
       - redis
       - qdrant
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: celery -A job_coach.app.core.celery_app worker -l info
+    environment:
+      - PYTHONPATH=/app/src
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/job_coach
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - OLLAMA_URL=http://ollama:11434
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
       - ollama
 
   postgres:

@@ -38,18 +38,31 @@ async def upload_resume(
     db.commit()
     db.refresh(resume)
 
-    # Try to index (extract text + embed) — graceful if ML deps not installed
-    try:
-        from job_coach.app.services.indexing_service import index_resume
+    # Save file to disk for Celery worker
+    import os
+    import uuid
 
-        chunks_count = index_resume(db, resume.id, pdf_bytes, current_user.id)
-        print(f"Indexed {chunks_count} chunks from {resume.filename}")
-        db.refresh(resume)  # refresh to get raw_text
+    upload_dir = os.path.join("uploads", "resumes")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+    file_path = os.path.join(upload_dir, unique_filename)
+
+    with open(file_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    # Try to queue the indexing task
+    try:
+        from job_coach.app.tasks.worker import index_resume_task
+
+        # .delay() sends task to Celery asynchronously
+        index_resume_task.delay(resume.id, file_path, current_user.id)
+        print(f"Queued indexing task for {resume.filename}")
     except ImportError:
-        pass  # ML dependencies not installed — skip indexing
+        pass  # Celery or ML deps not installed — skip indexing
     except Exception as e:
-        print(f"Indexing failed: {e}")
-        pass  # Indexing failed — resume metadata is still saved
+        print(f"Failed to queue indexing task: {e}")
+        pass  # Task queuing failed — resume metadata is still saved
 
     return resume
 

@@ -48,3 +48,41 @@ def skill_gap(
             missing_skills=[],
             match_score=0.0,
         )
+
+
+class SemanticMatchRequest(BaseModel):
+    resume_text: str
+    job_description: str
+
+
+class SemanticMatchResponse(BaseModel):
+    similarity_score: float
+    interpretation: str
+
+
+@router.post("/semantic-match", response_model=SemanticMatchResponse)
+def semantic_job_match(
+    body: SemanticMatchRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Calculate the semantic vector similarity between a resume and a job description.
+
+    Unlike skill gap analysis which extracts explicit keywords, this pipeline uses
+    dense vector embeddings to understand the implicit contextual match.
+    """
+    try:
+        from job_coach.ml.analysis.semantic_match import generate_semantic_match
+
+        result = generate_semantic_match(
+            resume_text=body.resume_text,
+            job_description=body.job_description,
+        )
+        return SemanticMatchResponse(
+            similarity_score=result.similarity_score,
+            interpretation=result.interpretation,
+        )
+    except ImportError:
+        return SemanticMatchResponse(
+            similarity_score=0.0,
+            interpretation="ML dependencies are not installed.",
+        )

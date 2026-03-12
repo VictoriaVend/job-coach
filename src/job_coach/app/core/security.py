@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 
 from job_coach.app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
@@ -22,12 +22,17 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    jwt_token_create = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+    print(jwt_token_create)
+    return jwt_token_create
 
 
 def decode_access_token(token: str) -> dict | None:
     """Decode JWT token. Returns payload dict or None if invalid."""
     try:
+        print(token)
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None

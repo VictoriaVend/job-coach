@@ -1,22 +1,22 @@
-# Базовый образ
+# Base image
 FROM python:3.14-slim
 
-# Рабочая директория
+# Working directory
 WORKDIR /app
 
-# Копируем pyproject.toml и src для кеширования слоев
+# Copy pyproject.toml and src for caching dependency installation layers
 COPY pyproject.toml .
 COPY src/ ./src
 
-# Обновляем pip и устанавливаем зависимости
+# Upgrade pip and install dependencies
 RUN pip install --upgrade pip
 RUN pip install ".[dev]"
 
-# Копируем остальной проект (alembic, docker-compose и др.)
+# Copy the rest of the project (alembic, docker-compose, etc.)
 COPY . /app
 
-# PYTHONPATH для корректного импорта
+# Set PYTHONPATH for proper imports
 ENV PYTHONPATH=/app/src
 
-# Команда запуска
+# Run command
 CMD ["uvicorn", "job_coach.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

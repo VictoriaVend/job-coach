@@ -41,17 +41,38 @@ def build_context(retrieved_chunks: list[dict]) -> str:
     return "\n\n".join(context_parts)
 
 
-def build_prompt(query: str, context: str) -> str:
-    """Construct the prompt for the LLM.
+def query_ollama(query: str, context: str) -> str:
+    """Send a prompt to Ollama using LangChain and return the response.
 
     Args:
         query: User's question.
         context: Retrieved context from vector search.
 
     Returns:
-        Complete prompt string.
+        LLM response text.
     """
-    return f"""You are an AI Job Coach assistant. Use the provided context to answer 
+    try:
+        from langchain.prompts import PromptTemplate
+        from langchain_community.llms import Ollama
+    except ImportError as exc:
+        raise ImportError(
+            "langchain and langchain-community are required. "
+            "Install with: pip install langchain langchain-community"
+        ) from exc
+
+    import httpx
+
+    # Check if Ollama is accessible first
+    try:
+        httpx.get(f"{settings.OLLAMA_URL}/api/version", timeout=2.0)
+    except Exception:
+        return (
+            "Ollama service is not available. "
+            "Please ensure Ollama is running at " + settings.OLLAMA_URL
+        )
+
+    # Define LangChain prompt
+    template = """You are an AI Job Coach assistant. Use the provided context to answer 
 the user's question. If the context doesn't contain relevant information, say so 
 honestly. Always be helpful and provide actionable advice.
 
@@ -62,37 +83,22 @@ Question: {query}
 
 Answer in a structured, professional manner. Focus on actionable insights."""
 
+    prompt = PromptTemplate.from_template(template)
 
-def query_ollama(prompt: str) -> str:
-    """Send a prompt to Ollama and return the response.
+    # Initialize LangChain Ollama wrapper
+    llm = Ollama(
+        model="llama3.2",
+        base_url=settings.OLLAMA_URL,
+        temperature=0.3,  # low temp for more factual retrieval answers
+    )
 
-    Args:
-        prompt: The complete prompt to send.
-
-    Returns:
-        LLM response text.
-    """
-    import httpx
+    # Create and run the chain
+    chain = prompt | llm
 
     try:
-        response = httpx.post(
-            f"{settings.OLLAMA_URL}/api/generate",
-            json={
-                "model": "llama3.2",
-                "prompt": prompt,
-                "stream": False,
-            },
-            timeout=120.0,
-        )
-        response.raise_for_status()
-        return response.json().get("response", "")
-    except httpx.ConnectError:
-        return (
-            "Ollama service is not available. "
-            "Please ensure Ollama is running at " + settings.OLLAMA_URL
-        )
+        return chain.invoke({"context": context, "query": query})
     except Exception as e:
-        return f"Error querying LLM: {e!s}"
+        return f"Error querying LLM via LangChain: {e!s}"
 
 
 def run_rag_pipeline(
@@ -132,9 +138,8 @@ def run_rag_pipeline(
     # 3. Build context
     context = build_context(retrieved_chunks)
 
-    # 4. Query LLM
-    prompt = build_prompt(query, context)
-    answer = query_ollama(prompt)
+    # 4. Query LLM via LangChain
+    answer = query_ollama(query, context)
 
     # 5. Return structured result
     sources = [
@@ -142,7 +147,7 @@ def run_rag_pipeline(
             "text": chunk["text"][:200] + "..."
             if len(chunk["text"]) > 200
             else chunk["text"],
-            "score": chunk["score"],
+            "score": chunk.get("score", 0.0),
             "document_type": chunk.get("document_type", "unknown"),
         }
         for chunk in retrieved_chunks

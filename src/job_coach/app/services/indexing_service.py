@@ -12,7 +12,7 @@ from job_coach.ml.ingestion import chunk_text, extract_text_from_pdf
 def index_resume(
     db: Session,
     resume_id: int,
-    pdf_bytes: bytes,
+    file_path: str,
     user_id: int,
 ) -> int:
     """Parse a resume PDF, chunk it, embed it, and store in Qdrant.
@@ -22,13 +22,16 @@ def index_resume(
     Args:
         db: Database session.
         resume_id: ID of the Resume record.
-        pdf_bytes: Raw PDF file bytes.
+        file_path: Path to the saved PDF file.
         user_id: Owner user ID.
 
     Returns:
         Number of chunks indexed.
     """
     # 1. Extract text
+    with open(file_path, "rb") as f:
+        pdf_bytes = f.read()
+
     raw_text = extract_text_from_pdf(pdf_bytes)
 
     # 2. Save raw text to DB
