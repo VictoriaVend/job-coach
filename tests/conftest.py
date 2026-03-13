@@ -75,5 +75,5 @@ def registered_user(client: TestClient) -> dict:
 @pytest.fixture()
 def auth_headers(registered_user: dict) -> dict:
     """Return Authorization headers with a valid JWT for the test user."""
-    token = create_access_token(data={"sub": registered_user["id"]})
+    token = create_access_token(data={"sub": str(registered_user["id"])})
     return {"Authorization": f"Bearer {token}"}
