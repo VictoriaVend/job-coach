@@ -19,9 +19,11 @@ dependencies = [
     # AI / ML (uncomment when needed)
     # "langchain",
     # "langchain-community",
+    # "langchain-huggingface",
     # "sentence-transformers",
     # "qdrant-client",
     # "PyMuPDF",
+    # "numpy",
     # Infrastructure (uncomment when needed)
     # "celery",
     # "redis",
@@ -40,9 +42,11 @@ dev = [
 ml = [
     "langchain",
     "langchain-community",
+    "langchain-huggingface",
     "sentence-transformers",
     "qdrant-client",
     "PyMuPDF",
+    "numpy",
 ]
 infra = [
     "celery",

@@ -10,7 +10,6 @@ services:
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/job_coach
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - OLLAMA_URL=http://ollama:11434
     volumes:
       - .:/app
     depends_on:
@@ -27,14 +26,12 @@ services:
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/job_coach
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - OLLAMA_URL=http://ollama:11434
     volumes:
       - .:/app
     depends_on:
       - postgres
       - redis
       - qdrant
-      - ollama
 
   postgres:
     image: postgres:15
@@ -57,10 +54,7 @@ services:
     ports:
       - "6333:6333"
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
+      - "6333:6333"
 
 volumes:
   pgdata:
