@@ -6,7 +6,7 @@ COPY pyproject.toml .
 COPY src/ ./src
 
 RUN pip install --upgrade pip
-RUN pip install .
+RUN pip install ".[ml,infra]"
 
 COPY . /app
 

@@ -10,7 +10,7 @@ COPY src/ ./src
 
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip
-RUN pip install ".[dev]"
+RUN pip install ".[dev,ml,infra]"
 
 # Copy the rest of the project (alembic, docker-compose, etc.)
 COPY . /app
