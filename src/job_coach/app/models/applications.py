@@ -14,7 +14,8 @@ class JobApplication(Base):
         Integer, ForeignKey("users.id"), nullable=False, index=True
     )
     company: Mapped[str] = mapped_column(String(200), nullable=False)
-    position: Mapped[str] = mapped_column(String(200), nullable=False)
+    position: Mapped[str] = mapped_column(String(200), nullable=True)
+    position_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(
         String(50), default="Applied"
     )  # Applied / Interview / Offer / Rejected

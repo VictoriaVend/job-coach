@@ -34,7 +34,14 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    user = create_user(db, user_in)
+    try:
+        user = create_user(db, user_in)
+    except Exception as e:
+        logger.error(f"Registration failed for {user_in.username}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Registration failed: {str(e)}",
+        )
     logger.info(f"Successfully registered user: {user.username}")
     return user
 
