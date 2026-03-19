@@ -2,10 +2,13 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/job_coach"
+    DATABASE_URL: str = (
+        "postgresql+psycopg2://postgres:postgres@localhost:5432/job_coach"
+    )
     REDIS_URL: str = "redis://localhost:6379/0"
     QDRANT_URL: str = "http://localhost:6333"
-    OLLAMA_URL: str = "http://localhost:11434"
+    HUGGINGFACEHUB_API_TOKEN: str | None = None
+    HF_MODEL_ID: str = "mistralai/Mistral-7B-Instruct-v0.3"
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

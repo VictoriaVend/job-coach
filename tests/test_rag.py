@@ -11,7 +11,7 @@ def test_rag_query_unauthenticated(client):
     assert resp.status_code == 401
 
 
-@patch("job_coach.app.api.routes.rag.run_rag_pipeline")
+@patch("job_coach.ml.rag.run_rag_pipeline")
 def test_rag_query_success(mock_rag_pipeline, client, auth_headers):
     # Setup mock return value
     from job_coach.ml.rag.pipeline import RAGResult
