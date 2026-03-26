@@ -7,14 +7,17 @@ from job_coach.app.schemas.user import UserCreate
 
 
 def get_user_by_username(db: Session, username: str) -> User | None:
+    logger.debug(f"DB Query: Fetching user by username: {username}")
     return db.query(User).filter(User.username == username).first()
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
+    logger.debug(f"DB Query: Fetching user by email: {email}")
     return db.query(User).filter(User.email == email).first()
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
+    logger.debug(f"DB Query: Fetching user by id: {user_id}")
     return db.query(User).filter(User.id == user_id).first()
 
 
@@ -34,10 +37,10 @@ def create_user(db: Session, user_in: UserCreate) -> User:
 def authenticate_user(db: Session, username: str, password: str) -> User | None:
     user = get_user_by_username(db, username)
     if not user:
-        logger.debug(f"Authentication failed: user {username} not found")
+        logger.warning(f"Authentication failed for user: {username}")
         return None
     if not verify_password(password, user.hashed_password):
-        logger.debug(f"Authentication failed: incorrect password for {username}")
+        logger.warning(f"Authentication failed for user: {username}")
         return None
     logger.info(f"User {username} successfully authenticated")
     return user

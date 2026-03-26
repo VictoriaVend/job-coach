@@ -11,7 +11,7 @@ def test_skill_gap_unauthenticated(client):
     assert resp.status_code == 401
 
 
-@patch("job_coach.app.api.routes.analysis.skill_gap")
+@patch("job_coach.ml.analysis.analyze_skill_gap")
 def test_skill_gap_success(mock_analyze, client, auth_headers):
     # Setup mock return value
     from job_coach.ml.analysis.skill_gap import SkillGapResult
@@ -47,7 +47,7 @@ def test_semantic_match_unauthenticated(client):
     assert resp.status_code == 401
 
 
-@patch("job_coach.app.api.routes.analysis.semantic_job_match")
+@patch("job_coach.ml.analysis.semantic_match.generate_semantic_match")
 def test_semantic_match_success(mock_semantic, client, auth_headers):
     # Setup mock return value
     from job_coach.ml.analysis.semantic_match import SemanticMatchResult

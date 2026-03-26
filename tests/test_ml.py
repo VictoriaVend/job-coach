@@ -1,5 +1,10 @@
-"""Unit tests for ML ingestion: text chunking logic."""
+"""Unit tests for ML ingestion and mathematical analysis."""
 
+from unittest.mock import patch
+
+import numpy as np
+
+from job_coach.ml.analysis.semantic_match import generate_semantic_match
 from job_coach.ml.ingestion.parser import chunk_text
 
 
@@ -46,4 +51,39 @@ class TestHealth:
     def test_health(self, client):
         resp = client.get("/health")
         assert resp.status_code == 200
-        assert resp.json() == {"status": "ok"}
+        assert resp.json()["status"] == "ok"
+        assert resp.json()["service"] == "AI-powered Job Coach"
+
+
+class TestSemanticMatch:
+    @patch("job_coach.ml.embeddings.service.EmbeddingService.embed_batch")
+    def test_semantic_match_mean_pooling(self, mock_embed_batch):
+        # Mocking embed_batch to strictly test the NumPy Mean Pooling Math
+        # Case: Resume has 2 chunks, Job has 1 chunk.
+        # Vector Arrays -> [1.0, 0.0] and [0.0, 1.0] -> Pooled: [0.5, 0.5]
+        # Target Job Array -> [0.5, 0.5]
+        # Result -> 100% Cosine Similarity match
+
+        def mock_embed_side_effect(texts):
+            if len(texts) == 2:
+                return np.array([[1.0, 0.0], [0.0, 1.0]])
+            if len(texts) == 1:
+                return np.array([[0.5, 0.5]])
+            return np.array([[0.0, 0.0]])
+
+        mock_embed_batch.side_effect = mock_embed_side_effect
+
+        # Triggering 2 chunks dynamically: Langchain chunk_size=500
+        resume_text = (
+            """This string is exactly one hundred characters long
+             to manipulate chunking limits natively."""
+            * 10
+        )
+        job_text = "Generic job description."
+
+        result = generate_semantic_match(resume_text, job_text)
+
+        # Assert correct ML mathematical distribution
+        assert mock_embed_batch.call_count == 2
+        assert 99.0 <= result.similarity_score <= 100.0
+        assert "Highly aligned semantically" in result.interpretation
