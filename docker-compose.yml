@@ -1,5 +1,6 @@
 services:
   api:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -23,6 +24,7 @@ services:
       qdrant:
         condition: service_healthy
   celery_worker:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -43,9 +45,10 @@ services:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_healthy
+        condition: service_started
 
   postgres:
+    restart: unless-stopped
     image: postgres:15
     env_file:
       - .env
@@ -62,6 +65,7 @@ services:
       retries: 5
 
   redis:
+    restart: unless-stopped
     image: redis:7
     ports:
       - "6379:6379"
@@ -72,6 +76,7 @@ services:
       retries: 5
 
   qdrant:
+    restart: unless-stopped
     image: qdrant/qdrant:v1.12.6
     ports:
       - "6333:6333"
