@@ -16,7 +16,7 @@ def create_job(db: Session, user_id: int, job_in: JobCreate) -> JobApplication:
 
 def get_jobs(
     db: Session, user_id: int, skip: int = 0, limit: int = 50
-) -> list[JobApplication]:
+) -> list[type[JobApplication]]:
     logger.debug(
         f"DB Query: Fetching jobs for user {user_id} (skip={skip}, limit={limit})"
     )
