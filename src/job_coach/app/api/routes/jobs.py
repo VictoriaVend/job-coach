@@ -37,8 +37,8 @@ def list_jobs(
 ):
     """List all job applications for the current user."""
     logger.debug(
-        f"""User {current_user.id} requesting job applications
-        (skip={skip}, limit={limit})"""
+        f"User {current_user.id} requesting job applications "
+        f"(skip={skip}, limit={limit})"
     )
     return get_jobs(db, current_user.id, skip=skip, limit=limit)
 
@@ -54,8 +54,7 @@ def get_job_endpoint(
     job = get_job(db, job_id, current_user.id)
     if not job:
         logger.warning(
-            f"""Job application {job_id}
-        not found for user {current_user.id}"""
+            f"Job application {job_id} " f"not found for user {current_user.id}"
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -76,8 +75,8 @@ def update_job_endpoint(
     job = update_job(db, job_id, current_user.id, job_in)
     if not job:
         logger.warning(
-            f"""Update failed: Job application {job_id}
-            not found for user {current_user.id}"""
+            f"Update failed: Job application {job_id} "
+            f"not found for user {current_user.id}"
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -97,8 +96,8 @@ def delete_job_endpoint(
     deleted = delete_job(db, job_id, current_user.id)
     if not deleted:
         logger.warning(
-            f"""Delete failed: Job application {job_id}
-             not found for user {current_user.id}"""
+            f"Delete failed: Job application {job_id}"
+            f"not found for user {current_user.id}"
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
