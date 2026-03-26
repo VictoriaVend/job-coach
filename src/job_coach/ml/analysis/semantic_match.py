@@ -50,12 +50,29 @@ def generate_semantic_match(
     # Note: For very long documents, chunking and averaging or using a specialized
     # document-level model is better, but this works well for standard lengths.
     try:
-        resume_embedding = embedding_service.embed_text(
-            resume_text[:4000]
-        )  # limit tokens
-        job_embedding = embedding_service.embed_text(job_description[:4000])
+        from job_coach.ml.ingestion.parser import chunk_text
 
-        score = cosine_similarity(resume_embedding, job_embedding)
+        # 1. Chunk texts safely (e.g. max 1000 chars per chunk to fit in 256
+        # WordPieces safely)
+        resume_chunks = chunk_text(resume_text, chunk_size=1000, chunk_overlap=100)
+        job_chunks = chunk_text(job_description, chunk_size=1000, chunk_overlap=100)
+
+        if not resume_chunks or not job_chunks:
+            return SemanticMatchResult(
+                similarity_score=0.0,
+                interpretation="Empty document provided.",
+            )
+
+        # 2. Embed all chunks (Batching is much faster)
+        resume_embs = embedding_service.embed_batch([c["text"] for c in resume_chunks])
+        job_embs = embedding_service.embed_batch([c["text"] for c in job_chunks])
+
+        # 3. Mean Pooling: Average the document chunks to get a global document
+        # representation
+        resume_mean = np.mean(resume_embs, axis=0).tolist()
+        job_mean = np.mean(job_embs, axis=0).tolist()
+
+        score = cosine_similarity(resume_mean, job_mean)
 
         # Convert to percentage
         match_percentage = round(max(0.0, score) * 100, 1)
@@ -69,7 +86,7 @@ def generate_semantic_match(
                 "Moderate match. Some terminology differs or experience gaps exist."
             )
         else:
-            interpretation = """Low match. The resume and 
+            interpretation = """Low match. The resume and
             job description describe conceptually different roles."""
 
         return SemanticMatchResult(
@@ -79,6 +96,6 @@ def generate_semantic_match(
         # Fallback or error handling
         return SemanticMatchResult(
             similarity_score=0.0,
-            interpretation=f"""Could not calculate semantic 
+            interpretation=f"""Could not calculate semantic
             match due to ML service error: {e}""",
         )

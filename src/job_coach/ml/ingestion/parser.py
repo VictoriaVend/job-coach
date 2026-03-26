@@ -53,39 +53,35 @@ def chunk_text(
     if not text:
         return []
 
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+    except ImportError as e:
+        raise ImportError(
+            "langchain is required for optimal text chunking. Install with: pip install langchain"
+        ) from e
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", ". ", "? ", "! ", " ", ""],
+        add_start_index=True,
+    )
+
+    docs = splitter.create_documents([text])
     chunks = []
-    start = 0
-    chunk_index = 0
 
-    while start < len(text):
-        end = start + chunk_size
+    for i, doc in enumerate(docs):
+        start_char = doc.metadata.get("start_index", 0)
+        chunk_text_segment = doc.page_content.strip()
+        end_char = start_char + len(chunk_text_segment)
 
-        # Try to break at sentence boundary
-        if end < len(text):
-            # Look back for sentence-ending punctuation
-            for boundary in (". ", "! ", "? ", "\n"):
-                last_boundary = text.rfind(boundary, start + chunk_size // 2, end)
-                if last_boundary != -1:
-                    end = last_boundary + len(boundary)
-                    break
-
-        chunk_text_segment = text[start:end].strip()
-        if chunk_text_segment:
-            chunks.append(
-                {
-                    "text": chunk_text_segment,
-                    "chunk_index": chunk_index,
-                    "start_char": start,
-                    "end_char": end,
-                }
-            )
-            chunk_index += 1
-
-        start = end - chunk_overlap
-        if start >= len(text):
-            break
-        # Avoid infinite loop
-        if end >= len(text):
-            break
+        chunks.append(
+            {
+                "text": chunk_text_segment,
+                "chunk_index": i,
+                "start_char": start_char,
+                "end_char": end_char,
+            }
+        )
 
     return chunks

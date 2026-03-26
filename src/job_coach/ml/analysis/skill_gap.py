@@ -30,7 +30,7 @@ def extract_skills_via_llm(text: str, text_type: str = "resume") -> list[str]:
     """
     import httpx
 
-    prompt = f"""Extract all technical and professional skills from the following 
+    prompt = f"""Extract all technical and professional skills from the following
 {text_type}. Return ONLY a JSON array of skill strings, nothing else.
 
 Example output: ["Python", "FastAPI", "PostgreSQL", "Docker", "Machine Learning"]

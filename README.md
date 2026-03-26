@@ -1,196 +1,211 @@
-# My Project
+# AI-Powered Job Coach
 
-## Setup
+Backend showcase for tracking job applications and demonstrating an end-to-end AI workflow:
 
-python -m venv venv
-.\venv\Scripts\activate
-pip install -U pip
-pip install .[dev]
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files
-## Run
+- JWT auth and user-scoped CRUD for job applications
+- Resume PDF upload with secure file validation
+- Background indexing with Celery
+- Semantic retrieval with Qdrant
+- RAG answers backed by Hugging Face Inference API
 
-pip install -e .
-uvicorn job_coach.app.main:app --reload
-Overview
+This repository is intentionally optimized as an interview-ready backend artifact: reproducible locally with Docker Compose, honest about what is real vs optional, and easy to demo in under 10 minutes.
 
-AI-powered Job Application Tracker — a production-grade backend that combines traditional
-application tracking with a Retrieval-Augmented Generation (RAG) pipeline and background processing.
+## What This Project Demonstrates
 
-![Backend Architecture Swagger UI](https://via.placeholder.com/800x400.png?text=AI+Job+Coach+Swagger+UI+and+Architecture)
+- FastAPI application design with SQLAlchemy 2.0 and Alembic
+- Authenticated multi-tenant API behavior with cross-user isolation
+- Background processing using Celery and Redis
+- Retrieval-Augmented Generation over uploaded resumes
+- Practical engineering hygiene: tests, linting, Docker, CI, and explicit failure modes
 
-## Key ML Concepts Demonstrated
+## Architecture
 
-- **Retrieval-Augmented Generation (RAG)**
-- **Vector similarity search**
-- **Embedding pipelines**
-- **Document chunking strategies**
-- **Skill extraction from unstructured text (resumes)**
-- **LLM prompt engineering via LangChain**
-- **Asynchronous ML workload processing (Celery)**
-
-## System Design & Architecture
-
-```
-User (Client)
-   │
-   ▼
-[FastAPI] ──(CRUD)──► [PostgreSQL] (Structured Data: Users, Jobs)
-   │
-   ├──(Upload)──► [Local Storage]
-   │
-   └──(Trigger)─► [Redis Broker] ──► [Celery Worker]
-                                          │
-                                          ▼
-                                   [ML Ingestion Pipeline]
-                                   1. PDF Parsing (PyMuPDF)
-                                   2. Sentence-Boundary Chunking
-                                   3. Embedding Gen (sentence-transformers)
-                                   4. Vector Indexing (Qdrant)
+```text
+Client / Swagger UI
+        |
+        v
+    FastAPI API
+      |    | \
+      |    |  \-- analysis endpoints (skill gap, semantic match)
+      |    |
+      |    \---- resume upload -> Celery task -> parsing/chunking/embedding
+      |
+      +---- PostgreSQL (users, jobs, resumes)
+      +---- Redis (Celery broker/result backend)
+      +---- Qdrant (vector search)
+      \---- Hugging Face Inference API (RAG generation)
 ```
 
-### RAG Pipeline Flow
+## Official Showcase Run Path
 
-When a user queries the system (`POST /rag/query`):
+The main supported demo path is Docker Compose.
 
-```
-Query ──► Embeddings (all-MiniLM-L6-v2) ──► Qdrant Vector Store
-                                                   │
-                                              (Top-K Chunks)
-                                                   ▼
-                                            LangChain Prompt
-                                                   │
-                                                   ▼
-Generated Answer ◄── LLM (Local Ollama llama3.2) ◄──┘
+### 1. Prepare environment
+
+```bash
+cp .env.example .env
 ```
 
-## Features & Example Workflow
+Required:
 
-1. **User registers** and receives a JWT token.
-2. **Uploads resume PDF** (`POST /resume/upload`).
-3. **Background Indexing**: Celery worker parses the PDF, chunks text, generates embeddings, and indexes them in Qdrant.
-4. **User adds job application** (`POST /jobs/`).
-5. **Skill Gap Analysis** (`POST /analysis/skill-gap`): Compares extracted resume skills against a job description explicitly.
-6. **Semantic Job Matching** (`POST /analysis/semantic-match`): Generates dense vector embeddings of the resume and job description to compute a cosine similarity score, revealing how closely aligned the candidate's experience is to the role.
-7. **Career Questions via RAG** (`POST /rag/query`): User asks questions and the LLM answers based purely on their indexed resumes.
+- Set `SECRET_KEY` to a real 32+ char secret
+- Set `HUGGINGFACEHUB_API_TOKEN` if you want real RAG responses
 
-### RAG Query Example
+### 2. Build and start the stack
 
-**Request:** `POST /rag/query`
+```bash
+docker compose up --build -d
+```
+
+This starts:
+
+- `api`
+- `celery_worker`
+- `postgres`
+- `redis`
+- `qdrant`
+
+### 3. Apply migrations
+
+```bash
+docker compose exec api alembic upgrade head
+```
+
+### 4. Open the API docs
+
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health: [http://localhost:8000/health](http://localhost:8000/health)
+- Readiness: [http://localhost:8000/ready](http://localhost:8000/ready)
+
+## 10-Minute Demo Flow
+
+1. Register a user via `POST /auth/register`
+2. Login via `POST /auth/login`
+3. Authorize in Swagger with the returned bearer token
+4. Create a job via `POST /jobs/`
+5. Upload a resume PDF via `POST /resume/upload`
+6. Inspect indexing state via `GET /resume/` or `GET /resume/{id}`
+7. Ask a question via `POST /rag/query`
+8. Run `POST /analysis/skill-gap` and `POST /analysis/semantic-match`
+
+The showcase story is strongest when you show:
+
+- User isolation in CRUD endpoints
+- Resume status lifecycle (`PENDING -> PROCESSING -> COMPLETED/FAILED`)
+- Background worker logs during indexing
+- RAG responses with retrieved source metadata
+
+## API Surface
+
+| Method | Endpoint | Auth | Notes |
+| --- | --- | --- | --- |
+| POST | `/auth/register` | No | Create user |
+| POST | `/auth/login` | No | Returns bearer token |
+| POST | `/jobs/` | Yes | Create job application |
+| GET | `/jobs/` | Yes | List current user's jobs |
+| GET | `/jobs/{id}` | Yes | Read one job |
+| PATCH | `/jobs/{id}` | Yes | Update one job |
+| DELETE | `/jobs/{id}` | Yes | Delete one job |
+| POST | `/resume/upload` | Yes | Upload a PDF and queue indexing |
+| GET | `/resume/` | Yes | List current user's resumes |
+| GET | `/resume/{id}` | Yes | Inspect one resume and indexing status |
+| POST | `/analysis/skill-gap` | Yes | Keyword-style gap analysis |
+| POST | `/analysis/semantic-match` | Yes | Embedding-based semantic comparison |
+| POST | `/rag/query` | Yes | Retrieve from Qdrant and generate answer |
+| GET | `/health` | No | Basic service health |
+| GET | `/ready` | No | DB readiness check |
+
+## RAG Contract
+
+`POST /rag/query` returns:
+
 ```json
 {
-  "query": "What skills am I missing for a Senior Backend role based on my resume?",
-  "top_k": 5
-}
-```
-
-**Response:**
-```json
-{
-  "query": "What skills am I missing...",
-  "answer": "Based on the provided context, your resume shows strong experience in Python and FastAPI, but lacks explicit mention of Kubernetes orchestration and CI/CD pipeline building, which are typically required for Senior Backend roles.",
+  "query": "What backend strengths are visible in my resume?",
+  "answer": "You show strong Python and FastAPI experience...",
   "sources": [
-    "[Source 1 (resume, relevance: 0.82)]\nExperienced Python developer utilizing FastAPI...",
-    "[Source 2 (resume, relevance: 0.75)]\nDeployed applications using Docker containers..."
+    {
+      "text": "Built FastAPI services and deployed Docker workloads...",
+      "score": 0.91,
+      "document_id": 12,
+      "document_type": "resume",
+      "chunk_index": 0
+    }
   ]
 }
 ```
 
-## Evaluation & Metrics
+If the stack is not configured for real inference, the API fails explicitly with a `503` instead of silently pretending to succeed.
 
-Retrieval performance on local resume dataset benchmark:
+## Resume Status Lifecycle
 
-- **precision@5**: 0.84
-- **precision@10**: 0.91
-- **Average RAG latency**: ~450 ms (varies depending on local LLM hardware)
+After upload, a resume moves through these states:
 
-*(Benchmarking code available in `ml.evaluation.metrics`)*
+- `PENDING`: metadata stored, task queued
+- `PROCESSING`: Celery worker is parsing/chunking/indexing
+- `COMPLETED`: raw text saved and vectors indexed
+- `FAILED`: background indexing raised an error
 
-## Deployment Stack
+## Smoke Check Commands
 
-Production-ready stack orchestrated via Docker Compose:
-
-- **API Layer**: FastAPI + Uvicorn
-- **Relational DB**: PostgreSQL 15 (SQLAlchemy 2.0 + Alembic)
-- **Vector DB**: Qdrant v1.12
-- **Broker / Cache**: Redis 7
-- **Background Workers**: Celery
-- **LLM Engine**: Ollama (llama3.2)
-
-## Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# Database
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/job_coach
-
-# Core Services
-REDIS_URL=redis://redis:6379/0
-QDRANT_URL=http://qdrant:6333
-OLLAMA_URL=http://ollama:11434
-
-# Security
-SECRET_KEY=your_super_secret_key_change_in_production
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-DEBUG=False
-```
-
-## Setup & Quick Start
-
-### Prerequisites
-- Docker & Docker Compose
-- (Optional) Python 3.12+ for local development without Docker
-
-### Run via Docker (Recommended)
+After the stack is up, these commands verify the happy path quickly:
 
 ```bash
-# 1. Clone repo
-git clone <repo_url>
-cd job_coach_helper
-
-# 2. Setup env
-cp .env.example .env
-
-# 3. Build and run all services
-docker compose up --build -d
-
-# 4. Run database migrations (from inside the API container)
+docker compose ps
 docker compose exec api alembic upgrade head
+docker compose logs celery_worker --tail=50
+curl http://localhost:8000/health
+curl http://localhost:8000/ready
 ```
 
-Open **http://localhost:8000/docs** for the Swagger UI.
+## Local Development Without Docker
 
-## API Endpoints
+Docker Compose is the official showcase path, but local host development also works if you already have the services available.
 
-| Method | Endpoint              | Auth | Description                     |
-|--------|-----------------------|------|---------------------------------|
-| POST   | `/auth/register`      | No   | Register a new user             |
-| POST   | `/auth/login`         | No   | Login, returns JWT              |
-| POST   | `/jobs/`              | Yes  | Create job application          |
-| GET    | `/jobs/`              | Yes  | List your applications          |
-| GET    | `/jobs/{id}`          | Yes  | Get application by ID           |
-| PATCH  | `/jobs/{id}`          | Yes  | Update application              |
-| DELETE | `/jobs/{id}`          | Yes  | Delete application              |
-| POST   | `/resume/upload`      | Yes  | Upload resume PDF               |
-| GET    | `/resume/`            | Yes  | List your resumes               |
-| POST   | `/rag/query`          | Yes  | Query RAG pipeline              |
-| POST   | `/analysis/skill-gap` | Yes  | Analyze explicit skill gap      |
-| POST   | `/analysis/semantic-match`| Yes  | Dense vector similarity match   |
-| GET    | `/health`             | No   | Health check                    |
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+pip install -U pip
+pip install -e .[dev,ml,infra]
+alembic upgrade head
+uvicorn job_coach.app.main:app --reload
+```
+
+When running outside Docker, update `DATABASE_URL`, `REDIS_URL`, and `QDRANT_URL` in `.env` accordingly.
 
 ## Testing
 
-Tests use an in-memory SQLite database mapped to SQLAlchemy — no PostgreSQL needed.
-
 ```bash
-# Install dev dependencies
-pip install -e ".[dev]"
-
-# Run test suite
-pytest tests/ -v
+pytest
+ruff check .
+black --check .
 ```
+
+Tests use SQLite in memory and mock external AI calls where appropriate so the suite stays fast and deterministic.
+
+## What Is Real vs Fallback
+
+Real in this showcase:
+
+- Auth, CRUD, DB persistence, migrations
+- Resume file validation and persistence
+- Celery task orchestration
+- Qdrant-backed retrieval
+- Hugging Face-backed RAG when configured
+
+Fallback / explicit failure behavior:
+
+- If ML libraries are missing, AI endpoints return `503`
+- If `HUGGINGFACEHUB_API_TOKEN` is missing, RAG returns `503` with a configuration message
+- Tests mock external model calls rather than hitting live services
+
+## What I Would Do Next In Production
+
+- Add stronger readiness checks for Redis, Qdrant, and Celery worker liveness
+- Introduce typed domain error models across all endpoints
+- Move uploads to object storage instead of local disk
+- Add rate limiting, audit logs, and stricter auth/session controls
+- Add deployment manifests and runtime metrics/tracing
 
 ## License
 

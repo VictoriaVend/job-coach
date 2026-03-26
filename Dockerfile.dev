@@ -1,19 +1,27 @@
 # Base image
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 # Working directory
 WORKDIR /app
 
-# Copy pyproject.toml and src for caching dependency installation layers
-COPY pyproject.toml .
-COPY src/ ./src
+# Upgrade pip and add non-root user
+RUN pip install --upgrade pip && \
+    useradd -m -s /bin/bash appuser
 
-# Upgrade pip and install dependencies
-RUN pip install --upgrade pip
+# Create a dummy structure to cache pip dependencies before copying source
+COPY pyproject.toml .
+RUN mkdir -p src/job_coach && touch src/job_coach/__init__.py
 RUN pip install ".[dev,ml,infra]"
 
-# Copy the rest of the project (alembic, docker-compose, etc.)
+# Copy the rest of the project
 COPY . /app
+
+# Install local package
+RUN pip install --no-deps -e .
+
+# Secure permissions
+RUN chown -R appuser:appuser /app
+USER appuser
 
 # Set PYTHONPATH for proper imports
 ENV PYTHONPATH=/app/src

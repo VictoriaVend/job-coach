@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from job_coach.app.api.dependencies import get_current_user
@@ -30,14 +30,14 @@ def create_job_endpoint(
 
 @router.get("/", response_model=list[JobRead])
 def list_jobs(
-    skip: int = 0,
-    limit: int = 50,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """List all job applications for the current user."""
     logger.debug(
-        f"""User {current_user.id} requesting job applications 
+        f"""User {current_user.id} requesting job applications
         (skip={skip}, limit={limit})"""
     )
     return get_jobs(db, current_user.id, skip=skip, limit=limit)
@@ -54,7 +54,7 @@ def get_job_endpoint(
     job = get_job(db, job_id, current_user.id)
     if not job:
         logger.warning(
-            f"""Job application {job_id} 
+            f"""Job application {job_id}
         not found for user {current_user.id}"""
         )
         raise HTTPException(
@@ -76,7 +76,7 @@ def update_job_endpoint(
     job = update_job(db, job_id, current_user.id, job_in)
     if not job:
         logger.warning(
-            f"""Update failed: Job application {job_id} 
+            f"""Update failed: Job application {job_id}
             not found for user {current_user.id}"""
         )
         raise HTTPException(

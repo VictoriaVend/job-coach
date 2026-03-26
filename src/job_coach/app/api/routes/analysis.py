@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from job_coach.app.api.dependencies import get_current_user
 from job_coach.app.core.logger import logger
@@ -9,8 +9,8 @@ router = APIRouter(tags=["analysis"])
 
 
 class SkillGapRequest(BaseModel):
-    resume_text: str
-    job_description: str
+    resume_text: str = Field(..., min_length=1, max_length=50_000)
+    job_description: str = Field(..., min_length=1, max_length=50_000)
 
 
 class SkillGapResponse(BaseModel):
@@ -44,18 +44,15 @@ def skill_gap(
         )
     except ImportError as e:
         logger.error(f"Skill gap analysis error for user {current_user.id}: {e}")
-        return SkillGapResponse(
-            resume_skills=[],
-            required_skills=[],
-            matching_skills=[],
-            missing_skills=[],
-            match_score=0.0,
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ML dependencies are not installed. Run: pip install '.[ml]'",
         )
 
 
 class SemanticMatchRequest(BaseModel):
-    resume_text: str
-    job_description: str
+    resume_text: str = Field(..., min_length=1, max_length=50_000)
+    job_description: str = Field(..., min_length=1, max_length=50_000)
 
 
 class SemanticMatchResponse(BaseModel):
@@ -87,7 +84,7 @@ def semantic_job_match(
         )
     except ImportError as e:
         logger.error(f"Semantic match analysis error for user {current_user.id}: {e}")
-        return SemanticMatchResponse(
-            similarity_score=0.0,
-            interpretation="ML dependencies are not installed.",
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ML dependencies are not installed. Run: pip install '.[ml]'",
         )

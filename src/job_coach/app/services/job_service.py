@@ -17,6 +17,9 @@ def create_job(db: Session, user_id: int, job_in: JobCreate) -> JobApplication:
 def get_jobs(
     db: Session, user_id: int, skip: int = 0, limit: int = 50
 ) -> list[JobApplication]:
+    logger.debug(
+        f"DB Query: Fetching jobs for user {user_id} (skip={skip}, limit={limit})"
+    )
     return (
         db.query(JobApplication)
         .filter(JobApplication.user_id == user_id)
@@ -27,6 +30,7 @@ def get_jobs(
 
 
 def get_job(db: Session, job_id: int, user_id: int) -> JobApplication | None:
+    logger.debug(f"DB Query: Fetching job {job_id} for user {user_id}")
     return (
         db.query(JobApplication)
         .filter(JobApplication.id == job_id, JobApplication.user_id == user_id)
@@ -51,6 +55,7 @@ def update_job(
 def delete_job(db: Session, job_id: int, user_id: int) -> bool:
     job = get_job(db, job_id, user_id)
     if not job:
+        logger.warning(f"Delete aborted: Job {job_id} not found for user {user_id}")
         return False
     db.delete(job)
     db.commit()

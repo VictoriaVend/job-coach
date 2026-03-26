@@ -1,14 +1,45 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from job_coach.app.api.routes import analysis, jobs, rag, resume, users
+from job_coach.app.core.config import settings
 from job_coach.app.core.logger import logger
+from job_coach.app.db.session import engine
 
 app = FastAPI(
-    title="AI-powered Job Coach",
+    title=settings.APP_NAME,
     description=(
         "Backend API for tracking job applications and AI-powered resume analysis"
     ),
     version="0.1.0",
+)
+
+
+# Secure Web Headers
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
+
+# CORS Configuration
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 logger.info("Starting AI-powered Job Coach API")
@@ -28,4 +59,23 @@ app.include_router(analysis.router, prefix="/analysis")
 @app.get("/health", tags=["system"])
 def health_check():
     logger.debug("Health check requested")
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": settings.APP_NAME,
+        "debug": settings.DEBUG,
+    }
+
+
+@app.get("/ready", tags=["system"])
+def readiness_check():
+    checks = {"database": "ok"}
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
+        logger.warning(f"Readiness database check failed: {exc}")
+        checks["database"] = "error"
+        return {"status": "degraded", "checks": checks}
+
+    return {"status": "ok", "checks": checks}
