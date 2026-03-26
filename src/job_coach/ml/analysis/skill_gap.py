@@ -30,16 +30,42 @@ def extract_skills_via_llm(text: str, text_type: str = "resume") -> list[str]:
     """
     import httpx
 
-    prompt = f"""Extract all technical and professional skills from the following
-{text_type}. Return ONLY a JSON array of skill strings, nothing else.
+    prompt = f"""
+    Extract all REAL technical and professional skills 
+    explicitly mentioned or strongly evidenced in the following {text_type}.
 
-Example output: ["Python", "FastAPI", "PostgreSQL", "Docker", "Machine Learning"]
+    STRICT RULES:
+    - Return ONLY a valid JSON array of strings.
+    - Do NOT return any explanation, intro, note, markdown, or extra text.
+    - Do NOT include duplicates.
+    - Do NOT include full sentences.
+    - Do NOT include vague personality traits or generic soft 
+    skills unless they are clearly relevant professional skills.
+    - Do NOT invent, assume, infer, 
+    or guess skills that are not explicitly stated or strongly supported by the text.
+    - Do NOT include job titles, company names, locations, 
+    or education unless they are actual skills.
+    
+    - Normalize obvious variations into a clean standard form 
+    (for example: "Postgres" -> "PostgreSQL",
+     "JS" -> "JavaScript" if clearly referring to the skill).
+    
+    - Prefer specific technical, software, analytical, domain, and professional skills.
+    - If no valid skills are found, return [].
 
-Text:
-{text[:3000]}
+    GOOD examples of skills:
+    ["Python", "FastAPI", "PostgreSQL", "Docker", "REST APIs",
+     "Git", "SQL", "Data Analysis", "Project Management"]
 
-Skills (JSON array only):"""
+    BAD examples (do not include unless truly used as a professional skill in context):
+    ["Hardworking", "Team Player", "Motivated",
+     "Resume", "Bachelor's Degree", "Google", "New York"]
 
+    Text:
+    {text[:3000]}
+
+    Return ONLY the JSON array of skills:
+    """
     try:
         response = httpx.post(
             f"{settings.OLLAMA_URL}/api/generate",
