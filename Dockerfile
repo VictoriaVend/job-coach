@@ -8,8 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Upgrade pip and add non-root user early
-RUN pip install --upgrade pip && \
-    useradd -m -s /bin/bash appuser
+RUN useradd -m -s /bin/bash appuser
 
 # Cache dependencies by using a dummy src structure
 # This prevents re-installing dependencies if only source code changes
