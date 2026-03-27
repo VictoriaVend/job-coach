@@ -39,8 +39,10 @@ async def rag_query(
 ):
     """Query the RAG pipeline: embed → retrieve → LLM → structured response."""
     logger.info(
-        f"User {current_user.id} querying RAG pipeline: "
-        f"'{body.query}' (top_k={body.top_k})"
+        "User %s querying RAG pipeline: '%s' (top_k=%s)",
+        current_user.id,
+        body.query,
+        body.top_k,
     )
     try:
         from job_coach.ml.rag import run_rag_pipeline
@@ -55,25 +57,35 @@ async def rag_query(
             user_id=current_user.id,
             top_k=body.top_k,
         )
+        sources = [
+            RAGSource(
+                text=source.get("text", ""),
+                score=source.get("score", 0.0),
+                document_id=source.get("document_id"),
+                document_type=source.get("document_type", "unknown"),
+                chunk_index=source.get("chunk_index"),
+            )
+            for source in result.sources
+        ]
         return RAGResponse(
             query=result.query,
             answer=result.answer,
-            sources=result.sources,
+            sources=sources,
         )
     except RAGDependencyError as e:
-        logger.error(f"RAG pipeline error for user {current_user.id}: {e}")
+        logger.error("RAG pipeline error for user %s: %s", current_user.id, e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="ML dependencies are not installed. Run: pip install '.[ml]'",
         )
     except RAGConfigurationError as e:
-        logger.warning(f"RAG pipeline misconfigured for user {current_user.id}: {e}")
+        logger.warning("RAG pipeline misconfigured for user %s: %s", current_user.id, e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
         )
     except RAGExecutionError as e:
-        logger.error(f"RAG pipeline runtime error for user {current_user.id}: {e}")
+        logger.error("RAG pipeline runtime error for user %s: %s", current_user.id, e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),

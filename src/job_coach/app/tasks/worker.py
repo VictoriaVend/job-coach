@@ -10,7 +10,7 @@ def index_resume_task(self, resume_id: int, file_path: str, user_id: int) -> dic
     """Background task to parse and index a PDF resume."""
     from job_coach.app.services.indexing_service import index_resume
 
-    logger.info(f"Starting indexing for resume {resume_id} at {file_path}")
+    logger.info("Starting indexing for resume %s at %s", resume_id, file_path)
 
     db = SessionLocal()
     from job_coach.app.models.resume import Resume
@@ -28,7 +28,9 @@ def index_resume_task(self, resume_id: int, file_path: str, user_id: int) -> dic
             resume.status = "COMPLETED"
             db.commit()
 
-        logger.info(f"Successfully indexed {chunks_count} chunks for resume {resume_id}")
+        logger.info(
+            "Successfully indexed %s chunks for resume %s", chunks_count, resume_id
+        )
         return {"status": "success", "resume_id": resume_id, "chunks": chunks_count}
     except Exception as exc:
         resume = db.query(Resume).filter(Resume.id == resume_id).first()
@@ -36,7 +38,7 @@ def index_resume_task(self, resume_id: int, file_path: str, user_id: int) -> dic
             resume.status = "FAILED"
             db.commit()
 
-        logger.error(f"Error indexing resume {resume_id}: {exc}")
+        logger.error("Error indexing resume %s: %s", resume_id, exc)
         # Retry with exponential backoff if needed,
         # though parsing usually fails deterministically
         raise self.retry(exc=exc, countdown=2**self.request.retries)

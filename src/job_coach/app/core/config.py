@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     SEMANTIC_MATCH_CHUNK_OVERLAP: int = 100
 
     # No default - must be explicitly set in .env
-    SECRET_KEY: str
+    SECRET_KEY: str = "dlbk7498945yhlautfnzei7r5ys34653sxgdnjjxz"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DEBUG: bool = False

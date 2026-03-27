@@ -30,11 +30,11 @@ def get_current_user(
         )
     try:
         user_id = int(subject)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
-        )
+        ) from exc
     user = get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(

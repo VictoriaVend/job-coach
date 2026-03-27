@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from jose import JWTError, jwt
+from jose import JWTError, jwt  # type: ignore[attr-defined]
 from passlib.context import CryptContext
 
 from job_coach.app.core.config import settings
@@ -10,7 +10,7 @@ from job_coach.app.core.logger import logger
 # Workaround for passlib + bcrypt==4.x/5.x incompatibility
 # passlib expects bcrypt.__about__.__version__, which is missing in newer bcrypt versions
 if not hasattr(bcrypt, "__about__"):
-    bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
+    bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})  # type: ignore[attr-defined]
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 
@@ -36,7 +36,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     )
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    logger.debug(f"Created access token for user {data.get('sub')}")
+    logger.debug("Created access token for user %s", data.get("sub"))
     return encoded_jwt
 
 

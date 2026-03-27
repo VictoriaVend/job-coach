@@ -21,9 +21,7 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
     logger.info(f"Attempting to register user: {user_in.username}")
     if get_user_by_username(db, user_in.username):
-        logger.warning(
-            f"Registration failed: Username {user_in.username} already taken"
-        )
+        logger.warning(f"Registration failed: Username {user_in.username} already taken")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already taken",

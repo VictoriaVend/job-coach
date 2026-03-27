@@ -126,6 +126,7 @@ Provide only the valid JSON output and nothing else.
 
     llm = HuggingFaceEndpoint(
         repo_id=settings.HF_MODEL_ID,
+        model=settings.HF_MODEL_ID,
         huggingfacehub_api_token=token,
         task=settings.RAG_LLM_TASK,
         temperature=settings.RAG_LLM_TEMPERATURE,

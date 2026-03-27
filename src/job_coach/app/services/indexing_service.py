@@ -42,10 +42,10 @@ def index_resume(
         db.commit()
 
     # 3. Chunk
-    logger.debug(f"Chunking resume text for {resume_id}")
+    logger.debug("Chunking resume text for %s", resume_id)
     chunks = chunk_text(raw_text)
     if not chunks:
-        logger.warning(f"No text extracted/chunked for resume {resume_id}")
+        logger.warning("No text extracted/chunked for resume %s", resume_id)
         return 0
 
     # 4. Embed
@@ -64,5 +64,7 @@ def index_resume(
         document_type="resume",
     )
 
-    logger.info(f"Indexed {len(chunks)} chunks for resume {resume_id} (user {user_id})")
+    logger.info(
+        "Indexed %s chunks for resume %s (user %s)", len(chunks), resume_id, user_id
+    )
     return len(chunks)

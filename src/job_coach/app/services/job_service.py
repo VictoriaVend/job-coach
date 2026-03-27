@@ -10,15 +10,18 @@ def create_job(db: Session, user_id: int, job_in: JobCreate) -> JobApplication:
     db.add(job)
     db.commit()
     db.refresh(job)
-    logger.info(f"User {user_id} created new job application {job.id}")
+    logger.info("User %s created new job application %s", user_id, job.id)
     return job
 
 
 def get_jobs(
     db: Session, user_id: int, skip: int = 0, limit: int = 50
-) -> list[type[JobApplication]]:
+) -> list[JobApplication]:
     logger.debug(
-        f"DB Query: Fetching jobs for user {user_id} (skip={skip}, limit={limit})"
+        "DB Query: Fetching jobs for user %s (skip=%s, limit=%s)",
+        user_id,
+        skip,
+        limit,
     )
     return (
         db.query(JobApplication)
@@ -30,7 +33,7 @@ def get_jobs(
 
 
 def get_job(db: Session, job_id: int, user_id: int) -> JobApplication | None:
-    logger.debug(f"DB Query: Fetching job {job_id} for user {user_id}")
+    logger.debug("DB Query: Fetching job %s for user %s", job_id, user_id)
     return (
         db.query(JobApplication)
         .filter(JobApplication.id == job_id, JobApplication.user_id == user_id)
@@ -48,16 +51,16 @@ def update_job(
         setattr(job, field, value)
     db.commit()
     db.refresh(job)
-    logger.info(f"User {user_id} updated job application {job_id}")
+    logger.info("User %s updated job application %s", user_id, job_id)
     return job
 
 
 def delete_job(db: Session, job_id: int, user_id: int) -> bool:
     job = get_job(db, job_id, user_id)
     if not job:
-        logger.warning(f"Delete aborted: Job {job_id} not found for user {user_id}")
+        logger.warning("Delete aborted: Job %s not found for user %s", job_id, user_id)
         return False
     db.delete(job)
     db.commit()
-    logger.info(f"User {user_id} deleted job application {job_id}")
+    logger.info("User %s deleted job application %s", user_id, job_id)
     return True

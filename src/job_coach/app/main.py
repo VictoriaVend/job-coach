@@ -67,7 +67,7 @@ def readiness_check():
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
     except Exception as exc:
-        logger.warning(f"Readiness database check failed: {exc}")
+        logger.warning("Readiness database check failed: %s", exc)
         checks["database"] = "error"
         return {"status": "degraded", "checks": checks}
 
