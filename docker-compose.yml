@@ -1,5 +1,6 @@
 services:
   api:
+    image: job-coach-api
     restart: unless-stopped
     build:
       context: .
