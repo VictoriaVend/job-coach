@@ -127,10 +127,10 @@ Provide only the valid JSON output and nothing else.
     llm = HuggingFaceEndpoint(
         repo_id=settings.HF_MODEL_ID,
         huggingfacehub_api_token=token,
-        task="text-generation",
-        temperature=0.1,  # low temp for factual answers
-        max_new_tokens=512,
-        do_sample=True,
+        task=settings.RAG_LLM_TASK,
+        temperature=settings.RAG_LLM_TEMPERATURE,
+        max_new_tokens=settings.RAG_LLM_MAX_NEW_TOKENS,
+        do_sample=settings.RAG_LLM_DO_SAMPLE,
     )
 
     chain = prompt | llm | parser
@@ -146,7 +146,7 @@ Provide only the valid JSON output and nothing else.
 async def run_rag_pipeline(
     query: str,
     user_id: int,
-    top_k: int = 5,
+    top_k: int = settings.RAG_TOP_K_DEFAULT,
 ) -> RAGResult:
     """Execute the full RAG pipeline asynchronously.
 

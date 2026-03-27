@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from job_coach.app.core.config import settings
 from job_coach.ml.embeddings.service import get_embedding_service
 
 
@@ -54,8 +55,16 @@ def generate_semantic_match(
 
         # 1. Chunk texts safely (e.g. max 1000 chars per chunk to fit in 256
         # WordPieces safely)
-        resume_chunks = chunk_text(resume_text, chunk_size=1000, chunk_overlap=100)
-        job_chunks = chunk_text(job_description, chunk_size=1000, chunk_overlap=100)
+        resume_chunks = chunk_text(
+            resume_text,
+            chunk_size=settings.SEMANTIC_MATCH_CHUNK_SIZE,
+            chunk_overlap=settings.SEMANTIC_MATCH_CHUNK_OVERLAP,
+        )
+        job_chunks = chunk_text(
+            job_description,
+            chunk_size=settings.SEMANTIC_MATCH_CHUNK_SIZE,
+            chunk_overlap=settings.SEMANTIC_MATCH_CHUNK_OVERLAP,
+        )
 
         if not resume_chunks or not job_chunks:
             return SemanticMatchResult(

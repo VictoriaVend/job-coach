@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from job_coach.app.api.dependencies import get_current_user
+from job_coach.app.core.config import settings
 from job_coach.app.core.logger import logger
 from job_coach.app.models.user import User
 
@@ -9,8 +10,12 @@ router = APIRouter(tags=["rag"])
 
 
 class RAGQuery(BaseModel):
-    query: str = Field(..., min_length=1, max_length=2000)
-    top_k: int = Field(5, ge=1, le=20)
+    query: str = Field(..., min_length=1, max_length=settings.RAG_QUERY_MAX_CHARS)
+    top_k: int = Field(
+        settings.RAG_TOP_K_DEFAULT,
+        ge=settings.RAG_TOP_K_MIN,
+        le=settings.RAG_TOP_K_MAX,
+    )
 
 
 class RAGSource(BaseModel):

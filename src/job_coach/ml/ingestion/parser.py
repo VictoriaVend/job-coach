@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from job_coach.app.core.config import settings
+
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """Extract raw text from a PDF file using PyMuPDF (fitz).
@@ -31,8 +33,8 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
 
 def chunk_text(
     text: str,
-    chunk_size: int = 500,
-    chunk_overlap: int = 50,
+    chunk_size: int = settings.INGEST_CHUNK_SIZE,
+    chunk_overlap: int = settings.INGEST_CHUNK_OVERLAP,
 ) -> list[dict]:
     """Split text into overlapping chunks for embedding.
 

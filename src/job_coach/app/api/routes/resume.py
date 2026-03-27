@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from job_coach.app.api.dependencies import get_current_user
+from job_coach.app.core.config import settings
 from job_coach.app.core.logger import logger
 from job_coach.app.db.dependencies import get_db
 from job_coach.app.models.resume import Resume
@@ -49,7 +50,7 @@ async def upload_resume(
     import os
     import uuid
 
-    upload_dir = os.path.join("uploads", "resumes")
+    upload_dir = settings.UPLOAD_DIR
     os.makedirs(upload_dir, exist_ok=True)
 
     unique_filename = f"{uuid.uuid4()}_{file.filename}"

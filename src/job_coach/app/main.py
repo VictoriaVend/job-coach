@@ -12,7 +12,7 @@ app = FastAPI(
     description=(
         "Backend API for tracking job applications and AI-powered resume analysis"
     ),
-    version="0.1.0",
+    version=settings.APP_VERSION,
 )
 
 
@@ -27,16 +27,9 @@ async def add_security_headers(request, call_next):
     return response
 
 
-# CORS Configuration
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:8080",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

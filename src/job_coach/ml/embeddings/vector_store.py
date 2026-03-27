@@ -88,7 +88,7 @@ class VectorStore:
         self,
         query_embedding: list[float],
         user_id: int,
-        top_k: int = 5,
+        top_k: int = settings.RAG_TOP_K_DEFAULT,
     ) -> list[dict]:
         """Search for similar documents, filtered by user.
 

@@ -15,7 +15,6 @@ dependencies = [
     "passlib[bcrypt]",
     "python-multipart",
     "python-dotenv",
-    "orjson",
     # AI / ML (uncomment when needed)
     # "langchain",
     # "langchain-community",
@@ -43,6 +42,7 @@ ml = [
     "langchain",
     "langchain-community",
     "langchain-huggingface",
+    "langchain-text-splitters",
     "sentence-transformers",
     "qdrant-client",
     "PyMuPDF",

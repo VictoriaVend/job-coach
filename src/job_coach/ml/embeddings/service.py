@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from job_coach.app.core.config import settings
+
 
 class EmbeddingService:
     """Generates text embeddings using sentence-transformers.
@@ -9,10 +11,8 @@ class EmbeddingService:
     The model is loaded lazily on first use to avoid startup overhead.
     """
 
-    DEFAULT_MODEL = "all-MiniLM-L6-v2"
-
     def __init__(self, model_name: str | None = None):
-        self.model_name = model_name or self.DEFAULT_MODEL
+        self.model_name = model_name or settings.EMBEDDING_MODEL_ID
         self._model = None
 
     @property
