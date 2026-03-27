@@ -1,22 +1,21 @@
 from datetime import datetime, timedelta, timezone
 
-# import bcrypt
+import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from job_coach.app.core.config import settings
 from job_coach.app.core.logger import logger
 
-# # Workaround for passlib + bcrypt==4.x/5.x incompatibility
-# # passlib expects bcrypt.__about__.__version__, which is missing in newer bcrypt versions
-# if not hasattr(bcrypt, "__about__"):
-#     bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
-#
-# pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
-#
-pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
+# Workaround for passlib + bcrypt==4.x/5.x incompatibility
+# passlib expects bcrypt.__about__.__version__, which is missing in newer bcrypt versions
+if not hasattr(bcrypt, "__about__"):
+    bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
+
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 
 
+# pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 def hash_password(password: str) -> str:
     logger.debug("Hashing new password")
     if len(password.encode("utf-8")) > 72:
