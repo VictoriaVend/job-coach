@@ -44,7 +44,6 @@ docker-compose.override.yml
 docker-compose.override.yaml
 **/pgdata/
 **/qdrant_storage/
-**/ollama_storage/
 
 # =====================
 # Alembic / Migrations
