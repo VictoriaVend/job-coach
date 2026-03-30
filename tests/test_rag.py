@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 def test_rag_query_unauthenticated(client):
     resp = client.post(
-        "/rag/query",
+        "/v1/rag/query",
         json={"query": "What skills am I missing?", "top_k": 5},
     )
     assert resp.status_code == 401
@@ -30,7 +30,7 @@ def test_rag_query_success(mock_rag_pipeline, client, auth_headers):
     )
 
     resp = client.post(
-        "/rag/query",
+        "/v1/rag/query",
         json={"query": "What is my experience?", "top_k": 3},
         headers=auth_headers,
     )
@@ -52,7 +52,7 @@ def test_rag_query_configuration_error(mock_rag_pipeline, client, auth_headers):
     )
 
     resp = client.post(
-        "/rag/query",
+        "/v1/rag/query",
         json={"query": "What is my experience?", "top_k": 3},
         headers=auth_headers,
     )
@@ -69,7 +69,7 @@ def test_rag_query_runtime_error(mock_rag_pipeline, client, auth_headers):
     )
 
     resp = client.post(
-        "/rag/query",
+        "/v1/rag/query",
         json={"query": "What is my experience?", "top_k": 3},
         headers=auth_headers,
     )

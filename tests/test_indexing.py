@@ -16,7 +16,7 @@ def test_index_resume_task_marks_completed(mock_index_resume, mock_session_local
         user_id=1,
         filename="resume.pdf",
         content_type="application/pdf",
-        status="PENDING",
+        status="UPLOADED",
     )
     db.add(resume)
     db.commit()
@@ -27,7 +27,7 @@ def test_index_resume_task_marks_completed(mock_index_resume, mock_session_local
 
     refreshed = db.query(Resume).filter(Resume.id == resume_id).first()
     assert refreshed is not None
-    assert refreshed.status == "COMPLETED"
+    assert refreshed.status == "Indexed"
 
 
 @patch("job_coach.app.tasks.worker.SessionLocal")
@@ -46,7 +46,7 @@ def test_index_resume_task_marks_failed_and_retries(
         user_id=1,
         filename="resume.pdf",
         content_type="application/pdf",
-        status="PENDING",
+        status="UPLOADED",
     )
     db.add(resume)
     db.commit()

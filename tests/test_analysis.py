@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 def test_skill_gap_unauthenticated(client):
     resp = client.post(
-        "/analysis/skill-gap",
+        "/v1/analysis/skill-gap",
         json={"resume_text": "Python", "job_description": "Java"},
     )
     assert resp.status_code == 401
@@ -25,7 +25,7 @@ def test_skill_gap_success(mock_analyze, client, auth_headers):
     )
 
     resp = client.post(
-        "/analysis/skill-gap",
+        "/v1/analysis/skill-gap",
         json={
             "resume_text": "I know Python",
             "job_description": "Need Python and Docker",
@@ -41,7 +41,7 @@ def test_skill_gap_success(mock_analyze, client, auth_headers):
 
 def test_semantic_match_unauthenticated(client):
     resp = client.post(
-        "/analysis/semantic-match",
+        "/v1/analysis/semantic-match",
         json={"resume_text": "Backend Dev", "job_description": "Senior Backend Eng"},
     )
     assert resp.status_code == 401
@@ -58,7 +58,7 @@ def test_semantic_match_success(mock_semantic, client, auth_headers):
     )
 
     resp = client.post(
-        "/analysis/semantic-match",
+        "/v1/analysis/semantic-match",
         json={"resume_text": "Backend Dev", "job_description": "Senior Backend Eng"},
         headers=auth_headers,
     )

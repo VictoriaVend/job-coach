@@ -4,11 +4,11 @@
 class TestRegister:
     def test_register_success(self, client):
         resp = client.post(
-            "/auth/register",
+            "/v1/auth/register",
             json={
                 "username": "newuser",
                 "email": "new@example.com",
-                "password": "securepass",
+                "password": "Securepass123!",
             },
         )
         assert resp.status_code == 201
@@ -23,7 +23,7 @@ class TestRegister:
 
     def test_register_duplicate_username(self, client, registered_user):
         resp = client.post(
-            "/auth/register",
+            "/v1/auth/register",
             json={
                 "username": "testuser",  # same as registered_user
                 "email": "other@example.com",
@@ -35,7 +35,7 @@ class TestRegister:
 
     def test_register_duplicate_email(self, client, registered_user):
         resp = client.post(
-            "/auth/register",
+            "/v1/auth/register",
             json={
                 "username": "another",
                 "email": "test@example.com",  # same as registered_user
@@ -46,15 +46,15 @@ class TestRegister:
         assert "Email already registered" in resp.json()["detail"]
 
     def test_register_missing_fields(self, client):
-        resp = client.post("/auth/register", json={"username": "x"})
+        resp = client.post("/v1/auth/register", json={"username": "x"})
         assert resp.status_code == 422  # validation error
 
 
 class TestLogin:
     def test_login_success(self, client, registered_user):
         resp = client.post(
-            "/auth/login",
-            data={"username": "testuser", "password": "strongpass123"},
+            "/v1/auth/login",
+            data={"username": "testuser", "password": "Strongpass123!"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -63,14 +63,14 @@ class TestLogin:
 
     def test_login_wrong_password(self, client, registered_user):
         resp = client.post(
-            "/auth/login",
+            "/v1/auth/login",
             data={"username": "testuser", "password": "wrongpass"},
         )
         assert resp.status_code == 401
 
     def test_login_nonexistent_user(self, client):
         resp = client.post(
-            "/auth/login",
+            "/v1/auth/login",
             data={"username": "ghost", "password": "pass"},
         )
         assert resp.status_code == 401
