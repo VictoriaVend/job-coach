@@ -1,9 +1,12 @@
 """Tests for auth endpoints: /auth/register, /auth/login."""
 
+import pytest
+
 
 class TestRegister:
-    def test_register_success(self, client):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_register_success(self, client):
+        resp = await client.post(
             "/v1/auth/register",
             json={
                 "username": "newuser",
@@ -21,8 +24,9 @@ class TestRegister:
         assert "password" not in data
         assert "hashed_password" not in data
 
-    def test_register_duplicate_username(self, client, registered_user):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_register_duplicate_username(self, client, registered_user):
+        resp = await client.post(
             "/v1/auth/register",
             json={
                 "username": "testuser",  # same as registered_user
@@ -33,8 +37,9 @@ class TestRegister:
         assert resp.status_code == 400
         assert "Username already taken" in resp.json()["detail"]
 
-    def test_register_duplicate_email(self, client, registered_user):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_register_duplicate_email(self, client, registered_user):
+        resp = await client.post(
             "/v1/auth/register",
             json={
                 "username": "another",
@@ -45,14 +50,16 @@ class TestRegister:
         assert resp.status_code == 400
         assert "Email already registered" in resp.json()["detail"]
 
-    def test_register_missing_fields(self, client):
-        resp = client.post("/v1/auth/register", json={"username": "x"})
+    @pytest.mark.asyncio
+    async def test_register_missing_fields(self, client):
+        resp = await client.post("/v1/auth/register", json={"username": "x"})
         assert resp.status_code == 422  # validation error
 
 
 class TestLogin:
-    def test_login_success(self, client, registered_user):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_login_success(self, client, registered_user):
+        resp = await client.post(
             "/v1/auth/login",
             data={"username": "testuser", "password": "Strongpass123!"},
         )
@@ -61,15 +68,17 @@ class TestLogin:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    def test_login_wrong_password(self, client, registered_user):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_login_wrong_password(self, client, registered_user):
+        resp = await client.post(
             "/v1/auth/login",
             data={"username": "testuser", "password": "wrongpass"},
         )
         assert resp.status_code == 401
 
-    def test_login_nonexistent_user(self, client):
-        resp = client.post(
+    @pytest.mark.asyncio
+    async def test_login_nonexistent_user(self, client):
+        resp = await client.post(
             "/v1/auth/login",
             data={"username": "ghost", "password": "pass"},
         )

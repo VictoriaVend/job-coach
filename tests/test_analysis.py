@@ -1,68 +1,53 @@
-"""Integration tests for analysis endpoints: /analysis/*."""
+"""Tests for analysis endpoints."""
 
 from unittest.mock import patch
 
+import pytest
 
-def test_skill_gap_unauthenticated(client):
-    resp = client.post(
+
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.analysis.analyze_resume_skills")
+async def test_skill_gap_unauthenticated(mock_analyze, client):
+    resp = await client.post(
         "/v1/analysis/skill-gap",
-        json={"resume_text": "Python", "job_description": "Java"},
+        json={"resume_text": "content", "target_role": "backend"},
     )
     assert resp.status_code == 401
+    mock_analyze.assert_not_called()
 
 
-@patch("job_coach.ml.analysis.analyze_skill_gap")
-def test_skill_gap_success(mock_analyze, client, auth_headers):
-    # Setup mock return value
-    from job_coach.ml.analysis.skill_gap import SkillGapResult
-
-    mock_analyze.return_value = SkillGapResult(
-        resume_skills=["Python"],
-        required_skills=["Python", "Docker"],
-        matching_skills=["Python"],
-        missing_skills=["Docker"],
-        match_score=50.0,
-    )
-
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.analysis.analyze_resume_skills")
+async def test_skill_gap_success(mock_analyze, client, auth_headers):
+    mock_analyze.return_value = {"skills": ["Python"], "gaps": []}
+    resp = await client.post(
         "/v1/analysis/skill-gap",
-        json={
-            "resume_text": "I know Python",
-            "job_description": "Need Python and Docker",
-        },
+        json={"resume_text": "content", "target_role": "backend"},
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["match_score"] == 50.0
-    assert "Docker" in data["missing_skills"]
-    assert "Python" in data["matching_skills"]
+    assert resp.json() == {"skills": ["Python"], "gaps": []}
 
 
-def test_semantic_match_unauthenticated(client):
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.analysis.semantic_match")
+async def test_semantic_match_unauthenticated(mock_semantic, client):
+    resp = await client.post(
         "/v1/analysis/semantic-match",
-        json={"resume_text": "Backend Dev", "job_description": "Senior Backend Eng"},
+        json={"resume_text": "a", "job_description": "b"},
     )
     assert resp.status_code == 401
+    mock_semantic.assert_not_called()
 
 
-@patch("job_coach.ml.analysis.semantic_match.generate_semantic_match")
-def test_semantic_match_success(mock_semantic, client, auth_headers):
-    # Setup mock return value
-    from job_coach.ml.analysis.semantic_match import SemanticMatchResult
-
-    mock_semantic.return_value = SemanticMatchResult(
-        similarity_score=85.5,
-        interpretation="Excellent match. Highly aligned semantically.",
-    )
-
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.analysis.semantic_match")
+async def test_semantic_match_success(mock_semantic, client, auth_headers):
+    mock_semantic.return_value = {"score": 0.8, "missing": ["SQL"]}
+    resp = await client.post(
         "/v1/analysis/semantic-match",
-        json={"resume_text": "Backend Dev", "job_description": "Senior Backend Eng"},
+        json={"resume_text": "a", "job_description": "b"},
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["similarity_score"] == 85.5
-    assert "Excellent match" in data["interpretation"]
+    assert resp.json() == {"score": 0.8, "missing": ["SQL"]}

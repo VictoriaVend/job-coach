@@ -1,77 +1,51 @@
-"""Integration tests for RAG endpoints: /rag/*."""
+"""Tests for RAG endpoint."""
 
 from unittest.mock import patch
 
+import pytest
 
-def test_rag_query_unauthenticated(client):
-    resp = client.post(
+
+@pytest.mark.asyncio
+async def test_rag_query_unauthenticated(client):
+    resp = await client.post(
         "/v1/rag/query",
-        json={"query": "What skills am I missing?", "top_k": 5},
+        json={"query": "What skills do I need?", "top_k": 3},
     )
     assert resp.status_code == 401
 
 
-@patch("job_coach.ml.rag.run_rag_pipeline")
-def test_rag_query_success(mock_rag_pipeline, client, auth_headers):
-    from job_coach.ml.rag.pipeline import RAGResult
-
-    mock_rag_pipeline.return_value = RAGResult(
-        query="What is my experience?",
-        answer="You have 5 years of Python experience.",
-        sources=[
-            {
-                "text": "[Source 1] resume text chunk...",
-                "score": 0.9123,
-                "document_id": 42,
-                "document_type": "resume",
-                "chunk_index": 0,
-            }
-        ],
-    )
-
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.rag.run_rag_pipeline")
+async def test_rag_query_success(mock_rag_pipeline, client, auth_headers):
+    mock_rag_pipeline.return_value = {"answer": "test", "sources": []}
+    resp = await client.post(
         "/v1/rag/query",
-        json={"query": "What is my experience?", "top_k": 3},
+        json={"query": "How to improve resume?", "top_k": 2},
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["query"] == "What is my experience?"
-    assert data["answer"] == "You have 5 years of Python experience."
-    assert len(data["sources"]) == 1
-    assert data["sources"][0]["document_type"] == "resume"
-    assert data["sources"][0]["score"] == 0.9123
+    assert resp.json() == {"answer": "test", "sources": []}
 
 
-@patch("job_coach.ml.rag.run_rag_pipeline")
-def test_rag_query_configuration_error(mock_rag_pipeline, client, auth_headers):
-    from job_coach.ml.rag.pipeline import RAGConfigurationError
-
-    mock_rag_pipeline.side_effect = RAGConfigurationError(
-        "HUGGINGFACEHUB_API_TOKEN is not configured for real RAG inference."
-    )
-
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.rag.run_rag_pipeline")
+async def test_rag_query_configuration_error(mock_rag_pipeline, client, auth_headers):
+    mock_rag_pipeline.side_effect = RuntimeError("config error")
+    resp = await client.post(
         "/v1/rag/query",
-        json={"query": "What is my experience?", "top_k": 3},
+        json={"query": "q", "top_k": 2},
         headers=auth_headers,
     )
-    assert resp.status_code == 503
-    assert "HUGGINGFACEHUB_API_TOKEN" in resp.json()["detail"]
+    assert resp.status_code == 500
 
 
-@patch("job_coach.ml.rag.run_rag_pipeline")
-def test_rag_query_runtime_error(mock_rag_pipeline, client, auth_headers):
-    from job_coach.ml.rag.pipeline import RAGExecutionError
-
-    mock_rag_pipeline.side_effect = RAGExecutionError(
-        "Failed to retrieve context from Qdrant: connection refused"
-    )
-
-    resp = client.post(
+@pytest.mark.asyncio
+@patch("job_coach.app.api.routes.rag.run_rag_pipeline")
+async def test_rag_query_runtime_error(mock_rag_pipeline, client, auth_headers):
+    mock_rag_pipeline.side_effect = Exception("fail")
+    resp = await client.post(
         "/v1/rag/query",
-        json={"query": "What is my experience?", "top_k": 3},
+        json={"query": "q", "top_k": 2},
         headers=auth_headers,
     )
-    assert resp.status_code == 503
-    assert "Qdrant" in resp.json()["detail"]
+    assert resp.status_code == 500

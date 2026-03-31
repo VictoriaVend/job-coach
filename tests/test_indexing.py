@@ -1,17 +1,20 @@
 """Tests for background resume indexing lifecycle."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from job_coach.app.models.resume import Resume
+from tests.conftest import TestingSessionLocal
 
 
-@patch("job_coach.app.tasks.worker.SessionLocal")
-@patch("job_coach.app.services.indexing_service.index_resume")
-def test_index_resume_task_marks_completed(mock_index_resume, mock_session_local, db):
-    from job_coach.app.tasks.worker import index_resume_task
+@pytest.mark.asyncio
+async def test_index_resume_task_marks_completed(db):
+    from job_coach.app.tasks import worker
 
-    mock_session_local.return_value = db
-    mock_index_resume.return_value = 3
+    async def fake_index_resume(session, resume_id, file_path, user_id):
+        return 3
+
     resume = Resume(
         user_id=1,
         filename="resume.pdf",
@@ -19,28 +22,30 @@ def test_index_resume_task_marks_completed(mock_index_resume, mock_session_local
         status="UPLOADED",
     )
     db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    await db.commit()
+    await db.refresh(resume)
     resume_id = resume.id
 
-    index_resume_task.run(resume_id, "C:/tmp/resume.pdf", resume.user_id)
+    with patch.object(worker, "SessionLocal", TestingSessionLocal), patch(
+        "job_coach.app.services.indexing_service.index_resume",
+        side_effect=fake_index_resume,
+    ):
+        result = worker.index_resume_task.run(
+            resume_id, "C:/tmp/resume.pdf", resume.user_id
+        )
 
-    refreshed = db.query(Resume).filter(Resume.id == resume_id).first()
+    refreshed = await db.get(Resume, resume_id)
     assert refreshed is not None
     assert refreshed.status == "Indexed"
+    assert result["chunks"] == 3
 
 
-@patch("job_coach.app.tasks.worker.SessionLocal")
-@patch("job_coach.app.services.indexing_service.index_resume")
-@patch("job_coach.app.tasks.worker.index_resume_task.retry")
-def test_index_resume_task_marks_failed_and_retries(
-    mock_retry, mock_index_resume, mock_session_local, db
-):
-    from job_coach.app.tasks.worker import index_resume_task
+@pytest.mark.asyncio
+async def test_index_resume_task_marks_failed_and_retries(db):
+    from job_coach.app.tasks import worker
 
-    mock_session_local.return_value = db
-    mock_index_resume.side_effect = RuntimeError("parse failed")
-    mock_retry.side_effect = RuntimeError("retry scheduled")
+    async def fail_index_resume(*args, **kwargs):
+        raise RuntimeError("parse failed")
 
     resume = Resume(
         user_id=1,
@@ -49,16 +54,20 @@ def test_index_resume_task_marks_failed_and_retries(
         status="UPLOADED",
     )
     db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    await db.commit()
+    await db.refresh(resume)
     resume_id = resume.id
 
-    try:
-        index_resume_task.run(resume_id, "C:/tmp/resume.pdf", resume.user_id)
-    except RuntimeError as exc:
-        assert str(exc) == "retry scheduled"
+    retry_mock = AsyncMock(side_effect=RuntimeError("retry scheduled"))
 
-    refreshed = db.query(Resume).filter(Resume.id == resume_id).first()
+    with patch.object(worker, "SessionLocal", TestingSessionLocal), patch(
+        "job_coach.app.services.indexing_service.index_resume",
+        side_effect=fail_index_resume,
+    ), patch.object(worker.index_resume_task, "retry", retry_mock):
+        with pytest.raises(RuntimeError, match="retry scheduled"):
+            worker.index_resume_task.run(resume_id, "C:/tmp/resume.pdf", resume.user_id)
+
+    refreshed = await db.get(Resume, resume_id)
     assert refreshed is not None
     assert refreshed.status == "FAILED"
-    mock_retry.assert_called_once()
+    retry_mock.assert_called_once()

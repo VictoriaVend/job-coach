@@ -1,10 +1,13 @@
 """System endpoint tests for app startup, health, readiness, and headers."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 
-def test_health_payload(client):
-    resp = client.get("/health")
+@pytest.mark.asyncio
+async def test_health_payload(client):
+    resp = await client.get("/health")
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
@@ -12,25 +15,30 @@ def test_health_payload(client):
     assert "debug" in data
 
 
-def test_health_security_headers(client):
-    resp = client.get("/health")
+@pytest.mark.asyncio
+async def test_health_security_headers(client):
+    resp = await client.get("/health")
     assert resp.headers["X-Content-Type-Options"] == "nosniff"
     assert resp.headers["X-Frame-Options"] == "DENY"
     assert "Strict-Transport-Security" in resp.headers
     assert "X-XSS-Protection" in resp.headers
 
 
-def test_readiness_ok(client):
-    resp = client.get("/ready")
+@pytest.mark.asyncio
+async def test_readiness_ok(client):
+    resp = await client.get("/ready")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok", "checks": {"database": "ok"}}
 
 
-@patch("job_coach.app.main.engine.connect")
-def test_readiness_degraded_on_db_error(mock_connect, client):
-    mock_connect.side_effect = RuntimeError("db unavailable")
+@pytest.mark.asyncio
+async def test_readiness_degraded_on_db_error(client):
+    async_mock = AsyncMock()
+    async_mock.__aenter__.side_effect = RuntimeError("db unavailable")
+    async_mock.__aexit__.return_value = False
 
-    resp = client.get("/ready")
+    with patch("job_coach.app.main.engine.connect", return_value=async_mock):
+        resp = await client.get("/ready")
 
     assert resp.status_code == 200
     assert resp.json() == {
