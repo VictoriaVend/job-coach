@@ -27,7 +27,7 @@ class TestResumeUpload:
             headers=auth_headers,
         )
         assert resp.status_code == 400
-        assert "File content does not match PDF format" in resp.json()["detail"]
+        assert "File integrity check failed" in resp.json()["detail"]
 
     @pytest.mark.asyncio
     @patch("job_coach.app.tasks.worker.index_resume_task.delay")
