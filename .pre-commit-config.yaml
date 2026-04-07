@@ -1,15 +1,48 @@
+# Pre-commit Configuration for Job Coach Project
+# Purpose: Maintain enterprise-level code quality (formatting, linting, security checks)
+# Usage:
+# 1. pip install pre-commit
+# 2. pre-commit install
+# 3. pre-commit run --all-files (to check existing code)
+
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.5
+    rev: v0.3.4
     hooks:
       - id: ruff
-        args: ["--fix"]
-        language_version: python3.12
+        args: ["--fix", "--exit-non-zero-on-fix"]
+        description: "Fast linting and automatic fixes (imports, common bugs)"
 
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 24.3.0
     hooks:
       - id: black
-        language_version: python3.12
+        args: ["--line-length", "90"]
+        description: "Deterministic code formatting"
 
-exclude: ^migrations/
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [
+            "pydantic>=2.0",
+            "sqlalchemy>=2.0",
+            "types-passlib",
+            "types-python-jose",
+            "types-PyYAML"
+        ]
+        args: ["--ignore-missing-imports"]
+        description: "Static type checking to prevent runtime TypeErrors"
+
+exclude: ^migrations/|venv/|\.mypy_cache/
