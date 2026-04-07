@@ -20,6 +20,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install ".[dev,ml,infra]"
+      - run: ruff check --fix .
       - run: ruff check .
       - run: black .
       - run: black --check .
