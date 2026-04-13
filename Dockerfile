@@ -7,6 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Install system dependencies needed for some ML libraries or tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Upgrade pip and add non-root user early
 RUN useradd -m -s /bin/bash appuser
 
@@ -14,10 +20,11 @@ RUN useradd -m -s /bin/bash appuser
 # This prevents re-installing dependencies if only source code changes
 COPY pyproject.toml .
 RUN mkdir -p src/job_coach && touch src/job_coach/__init__.py
-RUN pip install ".[ml,infra]"
+
+# INCREASE TIMEOUT for heavy ML packages and avoid caching archives
+RUN pip install --no-cache-dir --default-timeout=1000 ".[ml,infra]"
 
 # Copy actual source code with correct ownership
-# Using --chown here avoids an extra layer and doubles image size
 COPY --chown=appuser:appuser . .
 
 # Final installation of the project itself
