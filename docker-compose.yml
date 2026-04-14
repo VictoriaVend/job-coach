@@ -25,10 +25,8 @@ services:
       qdrant:
         condition: service_healthy
   celery_worker:
+    image: job-coach-api
     restart: unless-stopped
-    build:
-      context: .
-#      dockerfile: Dockerfile.dev
     command: celery -A job_coach.app.core.celery:celery_app worker -l info
     env_file:
       - .env
