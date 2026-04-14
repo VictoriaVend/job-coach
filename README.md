@@ -1,4 +1,4 @@
-# AI-Powered Job Coach
+# AI-Powered Backend System for Document Analysis (RAG Pipeline)
 
 Backend showcase for tracking job applications and demonstrating an end-to-end AI workflow:
 
