@@ -9,6 +9,9 @@ celery_app = Celery(
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
     include=["job_coach.app.tasks.worker"],
+    result_extended=True,
+    result_backend=settings.REDIS_URL,
+    task_track_started=True,
 )
 
 celery_app.conf.update(
